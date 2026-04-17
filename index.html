@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Auric Conversion Engine</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0a;--bg2:#111;--card:#161616;--card2:#1e1e1e;
+  --border:#252525;--gold:#d4af37;--gold2:#b8960c;--gold3:#f5d060;
+  --text:#f0f0f0;--muted:#888;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--orange:#f59e0b;--purple:#a855f7;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
+
+/* NAV */
+nav{background:linear-gradient(90deg,rgba(10,10,10,0.98),rgba(20,15,5,0.95));border-bottom:2px solid var(--gold);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:62px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(212,175,55,.08);}
+.brand{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:800;letter-spacing:.5px;background:linear-gradient(135deg,var(--gold),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.brand svg{width:36px;height:36px;}
+.tabs{display:flex;gap:2px;flex:1;margin-left:32px;}
+.tab{background:none;border:none;color:var(--muted);padding:8px 18px;border-radius:10px;font-size:13px;cursor:pointer;transition:all .25s;font-weight:600;font-family:inherit;}
+.tab:hover{background:rgba(212,175,55,.05);color:var(--gold);}
+.tab.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:700;box-shadow:0 4px 12px rgba(212,175,55,.2);}
+.nav-r{display:flex;align-items:center;gap:14px;}
+.clock{background:rgba(22,22,22,0.8);border:1px solid var(--border);padding:6px 16px;border-radius:22px;font-size:12px;color:var(--gold);font-family:monospace;letter-spacing:.5px;font-weight:600;}
+
+/* PANEL */
+.panel{display:none;padding:32px 28px;max-width:1380px;margin:0 auto;}
+.panel.on{display:block;animation:fadeIn .3s ease-out;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(168,85,247,.05));border:1px solid var(--border);border-radius:16px;padding:42px 32px;margin-bottom:32px;text-align:center;}
+.hero h1{font-size:32px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,var(--text),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{color:var(--muted);font-size:15px;margin-bottom:28px;}
+
+/* SEARCH */
+.search-box{position:relative;max-width:720px;margin:0 auto 16px;}
+.search-box input{width:100%;background:var(--card);border:2px solid var(--border);color:var(--text);padding:16px 56px 16px 22px;border-radius:14px;font-size:15px;outline:none;transition:all .2s;font-family:inherit;}
+.search-box input:focus{border-color:var(--gold);background:var(--card2);box-shadow:0 0 24px rgba(212,175,55,.1);}
+.search-box input::placeholder{color:#555;}
+.search-box button{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;color:#000;width:42px;height:42px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;font-weight:900;transition:all .2s;}
+.search-box button:hover{box-shadow:0 4px 16px rgba(212,175,55,.3);transform:translateY(-50%) scale(1.05);}
+.search-results{max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:none;max-height:300px;overflow-y:auto;}
+.search-results.on{display:block;}
+.result-item{padding:10px;border-bottom:1px solid var(--border);cursor:pointer;transition:all .2s;font-size:13.5px;}
+.result-item:hover{background:var(--card2);padding-left:16px;color:var(--gold);}
+
+/* SEC TITLE */
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--gold);font-weight:800;margin:28px 0 18px 0;display:flex;align-items:center;gap:12px;}
+.sec::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--gold);}
+.sec::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* LOB TABS */
+.lob-tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:12px;}
+.lob-tab{background:none;border:none;color:var(--muted);padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-12px;}
+.lob-tab:hover{color:var(--gold);}
+.lob-tab.on{color:var(--gold);border-bottom-color:var(--gold);}
+.lob-tab .cnt{font-size:10px;display:inline-block;background:var(--card);padding:2px 6px;border-radius:10px;margin-left:6px;}
+
+/* LINKS GRID */
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:32px;}
+.lbtn{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);color:var(--text);padding:16px 12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .25s;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:inherit;position:relative;overflow:hidden;}
+.lbtn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(212,175,55,.1),transparent);transition:left .5s;}
+.lbtn:hover::before{left:100%;}
+.lbtn:hover{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(212,175,55,.02));transform:translateY(-4px);box-shadow:0 8px 24px rgba(212,175,55,.15);}
+.lbtn .ico{font-size:24px;}
+
+/* AGENTS GRID */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:32px;}
+.acard{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:14px;padding:16px;transition:all .25s;position:relative;overflow:hidden;}
+.acard::before{content:'';position:absolute;top:-50%;right:-50%;width:200px;height:200px;background:radial-gradient(circle,rgba(212,175,55,.05),transparent);border-radius:50%;transition:all .3s;}
+.acard:hover::before{top:-30%;right:-30%;}
+.acard:hover{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,175,55,.02),rgba(168,85,247,.02));transform:translateY(-4px);box-shadow:0 8px 24px rgba(212,175,55,.1);}
+.aheader{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;position:relative;z-index:1;}
+.aname{display:flex;align-items:center;gap:10px;flex:1;}
+.av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(212,175,55,.2);}
+.aname-text{flex:1;}
+.aname-title{font-weight:800;font-size:14px;line-height:1.2;}
+.aname-sub{font-size:11px;color:var(--muted);}
+.alob{font-size:10px;padding:4px 10px;border-radius:16px;white-space:nowrap;font-weight:700;}
+.alob.ab{background:rgba(245,158,11,.15);color:var(--orange);}
+.alob.rt{background:rgba(34,197,94,.15);color:var(--green);}
+.ameta{font-size:10.5px;color:var(--muted);margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.crow{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.crow input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:7px 11px;border-radius:8px;font-size:12px;outline:none;min-width:0;transition:all .2s;}
+.crow input:focus{border-color:var(--gold);color:var(--text);}
+.cpbtn{background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;border:none;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;box-shadow:0 2px 8px rgba(34,197,94,.2);}
+.cpbtn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(34,197,94,.3);}
+.cpbtn.done{background:#555;}
+
+/* TAGGING */
+.tag-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px;}
+.tag-title{font-weight:700;font-size:14px;margin-bottom:12px;color:var(--gold);}
+.tag-input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13.5px;outline:none;margin-bottom:10px;font-family:inherit;}
+.tag-input:focus{border-color:var(--gold);}
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+.filter-card{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;}
+.filter-card:hover{border-color:var(--gold);background:linear-gradient(135deg,rgba(212,175,55,.05),rgba(212,175,55,.02));}
+.filter-label{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:1px;margin-bottom:6px;}
+.filter-value{font-weight:700;font-size:15px;color:var(--gold);}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:30px;}
+.scard{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;}
+.scard::after{content:'';position:absolute;top:-50%;right:-50%;width:200px;height:200px;background:radial-gradient(circle,rgba(212,175,55,.04),transparent);border-radius:50%;}
+.slbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;position:relative;z-index:1;}
+.sval{font-size:36px;font-weight:900;position:relative;z-index:1;}
+.ssub{font-size:12px;color:var(--muted);margin-top:6px;position:relative;z-index:1;}
+
+/* PROCESS */
+.pcard{background:linear-gradient(135deg,var(--card),var(--card2));border-left:4px solid var(--gold);border-radius:12px;padding:16px;margin-bottom:14px;}
+.pstep{display:flex;gap:12px;align-items:flex-start;}
+.pnum{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:900;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ptxt{flex:1;}
+.ptitle{font-weight:700;font-size:14px;margin-bottom:4px;}
+.psub{font-size:12px;color:var(--muted);line-height:1.5;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;background:linear-gradient(135deg,var(--card),var(--card2));border-radius:12px;overflow:hidden;border:1px solid var(--border);margin-bottom:30px;}
+.tbl th{background:var(--card2);padding:13px 15px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--gold);font-weight:800;border-bottom:2px solid var(--border);}
+.tbl td{padding:12px 15px;border-bottom:1px solid var(--border);font-size:13px;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(212,175,55,.03);}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--gold);color:var(--text);padding:14px 22px;border-radius:12px;font-size:13.5px;font-weight:700;opacity:0;transform:translateY(16px);transition:all .3s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(212,175,55,.15);}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* AI ASSISTANT */
+.ai-wrap{display:grid;grid-template-columns:240px 1fr;gap:20px;height:calc(100vh - 160px);min-height:500px;}
+.ai-sidebar{display:flex;flex-direction:column;gap:12px;}
+.ai-context-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.ai-context-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);font-weight:800;margin-bottom:10px;}
+.ai-quick-btn{width:100%;background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit;margin-bottom:6px;line-height:1.4;}
+.ai-quick-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.05);}
+.ai-chat{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.ai-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;min-height:300px;max-height:calc(100vh - 310px);}
+.ai-msg{display:flex;gap:11px;align-items:flex-start;}
+.ai-msg.user{flex-direction:row-reverse;}
+.ai-bubble{padding:11px 15px;border-radius:14px;font-size:13.5px;line-height:1.6;max-width:75%;}
+.ai-msg.bot .ai-bubble{background:var(--card2);border:1px solid var(--border);border-top-left-radius:4px;}
+.ai-msg.user .ai-bubble{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:600;border-top-right-radius:4px;}
+.ai-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.ai-msg.bot .ai-avatar{background:linear-gradient(135deg,var(--purple),#7c3aed);border:1px solid rgba(168,85,247,.3);}
+.ai-msg.user .ai-avatar{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;}
+.ai-footer{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;background:var(--card2);align-items:flex-end;}
+.ai-input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:11px 15px;border-radius:10px;font-size:13.5px;outline:none;font-family:inherit;resize:vertical;min-height:44px;transition:border-color .2s;}
+.ai-input:focus{border-color:var(--gold);}
+.ai-send{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none;padding:11px 18px;border-radius:10px;font-weight:800;cursor:pointer;font-size:14px;transition:all .2s;font-family:inherit;white-space:nowrap;}
+.ai-send:hover{box-shadow:0 4px 16px rgba(212,175,55,.3);}
+.ai-send:disabled{opacity:.5;cursor:not-allowed;}
+.ai-typing{display:flex;gap:5px;align-items:center;padding:6px 2px;}
+.ai-typing span{width:7px;height:7px;background:var(--gold);border-radius:50%;animation:bounce .9s infinite;}
+.ai-typing span:nth-child(2){animation-delay:.2s;}
+.ai-typing span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-8px);}}
+.ai-key-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.ai-key-input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:8px;font-size:12px;outline:none;font-family:inherit;}
+.ai-key-input:focus{border-color:var(--gold);}
+code{background:var(--bg2);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--gold);}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--bg2);border-radius:8px;padding:10px;font-size:12px;margin:6px 0;border:1px solid var(--border);}
+/* RESPONSIVE */
+@media(max-width:900px){.nlayout{grid-template-columns:1fr;}.agrid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}.ai-wrap{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="20,3 30,19 20,15 10,19" fill="#d4af37"/>
+      <polygon points="20,15 30,19 20,37 10,19" fill="#8B6914"/>
+    </svg>
+    AURIC Conversion Engine
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="sw('home',this)">🏠 Home</button>
+    <button class="tab" onclick="sw('perf',this)">📊 Performance</button>
+    <button class="tab" onclick="sw('tag',this)">🏷️ Tagging & Filter</button>
+    <button class="tab" onclick="sw('process',this)">🎯 Sales Process</button>
+    <button class="tab" onclick="sw('ann',this)">📢 Notices</button>
+    <button class="tab" onclick="sw('notes',this)">📋 Notes</button>
+    <button class="tab" onclick="sw('ai',this)">🤖 AI Assistant</button>
+  </div>
+  <div class="nav-r">
+    <div class="clock" id="clk">--:--:--</div>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="panel on" id="p-home">
+  <div class="hero">
+    <h1>🚀 Auric Conversion Engine</h1>
+    <p>Complete sales & telesales workspace for Abandoned & Retention teams</p>
+    <div class="search-box">
+      <input id="qs" placeholder="🔍 Search agents, scripts, links, processes..." onkeyup="liveSearch()"/>
+      <button onclick="goSearch()">🔎</button>
+    </div>
+    <div class="search-results" id="sres"></div>
+  </div>
+
+  <div class="sec">Quick Links</div>
+  <div class="links">
+    <button class="lbtn" onclick="go('https://docs.google.com/spreadsheets/d/1JF-YE0zFPkVQ-V2SiW1fJD7o8tAP26CSijdIHeCsmt4/edit?pli=1&gid=0#gid=0')"><span class="ico">📋</span>Abandoned Sheet</button>
+    <button class="lbtn" onclick="go('https://docs.google.com/spreadsheets/d/1MDatt0ZVcY2SdSa_cTbBOFE50HRw9B0sHkqw4r14k3Q/edit?gid=0#gid=0')"><span class="ico">📞</span>Non-Rep Calls</button>
+    <button class="lbtn" onclick="go('https://app.intelliticks.com/v3/conversations/all-chats?conv_id=5iLGuAA6Kd9GEqoRa_conv')"><span class="ico">💬</span>Intelliticks</button>
+    <button class="lbtn" onclick="go('https://auric.ringingo.com/call-center/phone')"><span class="ico">☎️</span>Agent Dialer</button>
+    <button class="lbtn" onclick="go('https://docs.google.com/forms/d/1_fIlJxjb8Ht66XMpqaBpUYZYXhOIQwrtMocX6-aRS6w/viewform?edit_requested=true')"><span class="ico">📝</span>Escalation</button>
+    <button class="lbtn" onclick="go('https://docs.google.com/forms/d/1A2c1GhWn38rwjbAfRK0BkOXG3Z6RVDEWu82eayeKt3U/edit')"><span class="ico">🛒</span>Order Form</button>
+    <button class="lbtn" onclick="go('https://mail.zoho.in/zm/#mail/folder/inbox')"><span class="ico">📧</span>Zoho Mail</button>
+    <button class="lbtn" onclick="go('https://www.theauric.com/products/liver-detox-effervescent-tablet-drop-fizz-drink')"><span class="ico">🌐</span>Auric Site</button>
+    <button class="lbtn" onclick="go('https://docs.google.com/spreadsheets/d/1mu45v2SayF7Xld8c2tawEu3rq5NEf_z41flWyBWxoMU/edit?gid=0#gid=0')"><span class="ico">📦</span>Hold for Payment</button>
+    <button class="lbtn" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')"><span class="ico">🏷️</span>Tagging Filter</button>
+  </div>
+
+  <div class="sec">Intelliticks Credentials</div>
+  <div style="background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:12px;padding:18px;margin-bottom:28px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:var(--gold);">🔐 Login Credentials</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Intelliticks Master Password</div>
+    <div class="crow" style="max-width:400px;">
+      <input type="text" value="Auric@123" readonly id="c1"/>
+      <button class="cpbtn" onclick="cp('c1',this)">Copy</button>
+    </div>
+  </div>
+
+  <div class="sec">Agents — Abandoned LOB</div>
+  <div class="agrid" id="agrid-ab"></div>
+
+  <div class="sec">Agents — Retention LOB</div>
+  <div class="agrid" id="agrid-rt"></div>
+</div>
+
+<!-- PERFORMANCE -->
+<div class="panel" id="p-perf">
+  <div class="sgrid">
+    <div class="scard"><div class="slbl">Total Calls Today</div><div class="sval">342</div><div class="ssub">↑ 18% from yesterday</div></div>
+    <div class="scard"><div class="slbl">Conversions</div><div class="sval" style="color:var(--green)">52</div><div class="ssub">15.2% conversion rate</div></div>
+    <div class="scard"><div class="slbl">NDR Resolved</div><div class="sval" style="color:var(--blue)">28</div><div class="ssub">Hold for Payment</div></div>
+    <div class="scard"><div class="slbl">Avg Handle Time</div><div class="sval" style="color:var(--orange)">4:18</div><div class="ssub">Minutes per call</div></div>
+  </div>
+
+  <div class="sec">Agent Performance Leaderboard</div>
+  <table class="tbl" id="ptbl"></table>
+</div>
+
+<!-- TAGGING & FILTER -->
+<div class="panel" id="p-tag">
+  <div class="tag-box">
+    <div class="tag-title">🏷️ Quick Tag Filter</div>
+    <input type="text" class="tag-input" placeholder="Search tags, responses, filters..." id="tagfilter" onkeyup="filterTags()"/>
+  </div>
+
+  <div class="sec">Response Categories</div>
+  <div class="filter-grid">
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">📞 Positive Response</div>
+      <div class="filter-value">Active Leads</div>
+    </div>
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">⏰ Call Back Later</div>
+      <div class="filter-value">Scheduled Follow-up</div>
+    </div>
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">❌ Not Interested</div>
+      <div class="filter-value">Dead Leads</div>
+    </div>
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">💳 Payment Failed</div>
+      <div class="filter-value">Retry Payment</div>
+    </div>
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">✅ Order Confirmed</div>
+      <div class="filter-value">Conversion Success</div>
+    </div>
+    <div class="filter-card" onclick="go('https://docs.google.com/spreadsheets/d/1hsd7WzT4mJgmkcqsgrNCfFy_0qr9Lw3k/edit?gid=257441062#gid=257441062')">
+      <div class="filter-label">🎯 High Priority</div>
+      <div class="filter-value">VIP Customers</div>
+    </div>
+  </div>
+
+  <div class="sec">Apply Bulk Actions</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;">
+    <button class="cpbtn" style="background:linear-gradient(135deg,var(--blue),#1d4ed8);">🔍 View Full Tagging Sheet</button>
+  </div>
+</div>
+
+<!-- SALES PROCESS -->
+<div class="panel" id="p-process">
+  <div class="sec">Auric Sales Process — Abandoned Leads</div>
+  <div class="pcard"><div class="pstep"><div class="pnum">1</div><div class="ptxt"><div class="ptitle">Lead Identification & Categorization</div><div class="psub">Identify abandoned customers from the Abandoned Sheet. Categorize by product type, order value, and time since abandonment (0-7 days, 7-30 days, 30+ days).</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">2</div><div class="ptxt"><div class="ptitle">Initial Contact & Engagement</div><div class="psub">Call customer using Agent Dialer. Use warm opening: "Hi [Name], I'm calling from Auric regarding your order of [Product]. I want to help you complete it safely."</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">3</div><div class="ptxt"><div class="ptitle">Pain Point Discovery</div><div class="psub">Ask: "What prevented you from completing the order?" Listen to objections — price, delivery, product info, payment issues. Document in Tagging Sheet.</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">4</div><div class="ptxt"><div class="ptitle">Solution Offering & Upsell</div><div class="psub">Address objection with: Discounts, bundle offers, free shipping, extended payment plans. Highlight product benefits. Offer alternative products if needed.</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">5</div><div class="ptxt"><div class="ptitle">Tagging & Response</div><div class="psub">Tag response in Tagging Sheet: Positive, Call Back Later, Not Interested, Payment Failed, etc. Add notes on customer sentiment and next steps.</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">6</div><div class="ptxt"><div class="ptitle">Order Completion</div><div class="psub">If positive: Guide through checkout via Intelliticks or direct link. Use Order Form for alternative payment. Confirm order in system.</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">7</div><div class="ptxt"><div class="ptitle">Follow-up & Escalation</div><div class="psub">If "Call Back Later" — Schedule follow-up in Intelliticks. If issues arise → Use Escalation Form. For payment failures → Retry or mark for later.</div></div></div></div>
+
+  <div class="sec">Auric Sales Process — Retention (Hold for Payment)</div>
+  <div class="pcard"><div class="pstep"><div class="pnum">1</div><div class="ptxt"><div class="ptitle">Payment Issue Detection</div><div class="psub">Identify customers with payment blocks from Hold for Payment Sheet. Reason: Card declined, insufficient funds, gateway issues, etc.</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">2</div><div class="ptxt"><div class="ptitle">Empathetic Contact</div><div class="psub">Call with: "Hi [Name], we had a payment issue on your order [ID]. I'm here to help resolve it quickly and securely."</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">3</div><div class="ptxt"><div class="ptitle">Payment Method Update</div><div class="psub">Ask: "Can we update your card/payment method?" Provide Order Form link for alternative payment (net banking, UPI, COD).</div></div></div></div>
+  
+  <div class="pcard"><div class="pstep"><div class="pnum">4</div><div class="ptxt"><div class="ptitle">Retry & Confirmation</div><div class="psub">Process payment with new method. Confirm order is live. Send order confirmation via email. Mark as resolved in Hold for Payment sheet.</div></div></div></div>
+
+  <div class="sec">Key Success Metrics</div>
+  <div class="filter-grid">
+    <div class="filter-card">
+      <div class="filter-label">💰 Conversion Rate</div>
+      <div class="filter-value">Target: 15%+</div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-label">⏱️ Avg Talk Time</div>
+      <div class="filter-value">Target: 4-5 min</div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-label">📞 Calls/Day</div>
+      <div class="filter-value">Abandoned: 60+</div>
+    </div>
+    <div class="filter-card">
+      <div class="filter-label">🎯 Quality Score</div>
+      <div class="filter-value">Target: 8.5+/10</div>
+    </div>
+  </div>
+</div>
+
+<!-- ANNOUNCEMENTS -->
+<div class="panel" id="p-ann">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:12px;">📢 Post Announcement</div>
+    <input id="at" placeholder="Announcement title..." style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13.5px;outline:none;margin-bottom:8px;width:100%;font-family:inherit;"/>
+    <textarea id="ab" placeholder="Write the announcement message..." style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13.5px;outline:none;margin-bottom:8px;resize:vertical;min-height:70px;font-family:inherit;"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="ap" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;"><option value="n">🟢 Normal</option><option value="h">🔴 Urgent</option><option value="i">🔵 Info</option></select>
+      <button class="cpbtn" onclick="postAnn()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;margin:0;">Post Announcement</button>
+    </div>
+  </div>
+  <div class="sec">Notice Board</div>
+  <div id="alist"></div>
+</div>
+
+<!-- NOTES -->
+<div class="panel" id="p-notes">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:18px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;">📋 Add Quick Note / Script</div>
+        <input id="nt" placeholder="Title (optional)..." style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13.5px;outline:none;margin-bottom:8px;font-family:inherit;"/>
+        <textarea id="nb" placeholder="Paste a script, copy template, or any text..." style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13.5px;outline:none;margin-bottom:8px;resize:vertical;min-height:100px;font-family:inherit;"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="cpbtn" onclick="saveNote()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;margin:0;">Save Note</button>
+          <button class="cpbtn" onclick="cpNow()" style="background:linear-gradient(135deg,var(--green),#16a34a);margin:0;">Copy Text</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Saved Scripts</div>
+      <div id="nlist" style="display:flex;flex-direction:column;gap:9px;max-height:500px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI ASSISTANT -->
+<div class="panel" id="p-ai">
+  <div class="sec">AI Sales Assistant — Powered by Claude AI</div>
+  <div style="background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(212,175,55,.05));border:1px solid rgba(168,85,247,.2);border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+    <span style="font-size:24px;">🤖</span>
+    <div style="flex:1;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:3px;">Auric AI Assistant</div>
+      <div style="font-size:12px;color:var(--muted);">Ask anything about sales scripts, objection handling, product info, or tagging guidance.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+      <input type="password" id="aiKey" class="ai-key-input" style="width:220px;" placeholder="Paste your Anthropic API key…"/>
+      <button class="cpbtn" style="background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;" onclick="saveKey()">Save</button>
+    </div>
+  </div>
+  <div class="ai-wrap">
+    <div class="ai-sidebar">
+      <div class="ai-context-box">
+        <div class="ai-context-title">⚡ Quick Prompts</div>
+        <button class="ai-quick-btn" onclick="quickAsk('Give me a strong opening script for an abandoned cart customer who ordered Auric Liver Detox')">📞 Abandoned Open Script</button>
+        <button class="ai-quick-btn" onclick="quickAsk('How should I handle the objection: the customer says the product is too expensive?')">💬 Price Objection</button>
+        <button class="ai-quick-btn" onclick="quickAsk('What should I say to a customer who said they will call back later?')">⏰ Call Back Later</button>
+        <button class="ai-quick-btn" onclick="quickAsk('Give me a retention script for a customer whose payment failed and I need to retry it')">💳 Payment Retry Script</button>
+        <button class="ai-quick-btn" onclick="quickAsk('How can I upsell a bundle offer to a customer who is ready to convert?')">🛒 Upsell Approach</button>
+        <button class="ai-quick-btn" onclick="quickAsk('Give me tips on how to improve my conversion rate today')">📈 Boost Conversions</button>
+        <button class="ai-quick-btn" onclick="quickAsk('How should I handle an NDR (non-delivery report) follow-up call?')">📦 NDR Follow-up</button>
+      </div>
+      <div class="ai-context-box">
+        <div class="ai-context-title">🗑️ Controls</div>
+        <button class="ai-quick-btn" onclick="clearChat()" style="color:var(--red);border-color:rgba(239,68,68,.2);">🗑 Clear Chat</button>
+      </div>
+    </div>
+    <div class="ai-chat">
+      <div class="ai-msgs" id="aiMsgs">
+        <div class="ai-msg bot">
+          <div class="ai-avatar">🤖</div>
+          <div class="ai-bubble">
+            👋 Hi! I'm your <strong>Auric AI Sales Assistant</strong>.<br><br>
+            I'm trained to help you with <strong>sales scripts</strong>, <strong>objection handling</strong>, <strong>tagging guidance</strong>, and anything else about your sales process.<br><br>
+            Paste your <strong>Anthropic API key</strong> above to get started, then ask me anything!
+          </div>
+        </div>
+      </div>
+      <div class="ai-footer">
+        <textarea class="ai-input" id="aiInput" placeholder="Ask about scripts, objections, tagging, product info…" onkeydown="aiKeydown(event)" rows="1"></textarea>
+        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">Send ➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// DATA
+const agents = [
+  {id:'TTBS119510',name:'Sushmita Pariaar',lob:'Abandoned',email:'auric429201064400@gmail.com',pwd:'Auric@123'},
+  {id:'TTBS120814',name:'Wazid Khan',lob:'Abandoned',email:'auric128851206037@gmail.com',pwd:'Okhla@#123'},
+  {id:'TTBS121194',name:'Abhishek Solanki',lob:'Abandoned',email:'auric339355248974@gmail.com',pwd:'Auric@#123'},
+  {id:'TTBS122004',name:'Mohd Zubair Alam',lob:'Abandoned',email:'auric137042532664@gmail.com',pwd:'Auric@123'},
+  {id:'TTBS122003',name:'Sahil Rajput',lob:'Abandoned',email:'auric109315524480@gmail.com',pwd:'Auric@123'},
+  {id:'TTBS122592',name:'Hiba Saeed',lob:'Abandoned',email:'auric198384014944@gmail.com',pwd:'Auric@#123'},
+  {id:'TTBS123851',name:'Shikha Yadav',lob:'Abandoned',email:'auric289310698938@gmail.com',pwd:'Auric@123'},
+  {id:'TTBS120885',name:'Himanshu Rajput',lob:'Retention',email:'auric208527689723@gmail.com',pwd:'Auric@#123'},
+  {id:'TTBS122870',name:'Manvendra Singh',lob:'Retention',email:'auric417011408373@gmail.com',pwd:'Okhla@123'},
+  {id:'TTBS123278',name:'Manshika Das',lob:'Retention',email:'auric328882914425@gmail.com',pwd:'Auric@123'},
+  {id:'TTBS123454',name:'Pranay Bhutange',lob:'Retention',email:'auric458076539725@gmail.com',pwd:'Okhla@123'},
+  {id:'TTBS123846',name:'Tanya Singh',lob:'Retention',email:'auric379354316807@gmail.com',pwd:'Auric@123'}
+];
+
+const searchItems = agents.map(a=>({type:'Agent',label:a.name,lob:a.lob,id:a.id})).concat([
+  {type:'Link',label:'Abandoned Sheet',url:'https://docs.google.com/spreadsheets/d/1JF-YE0zFPkVQ-V2SiW1fJD7o8tAP26CSijdIHeCsmt4/edit?pli=1&gid=0#gid=0'},
+  {type:'Link',label:'Dialer',url:'https://auric.ringingo.com/call-center/phone'},
+  {type:'Link',label:'Intelliticks',url:'https://app.intelliticks.com/v3/conversations/all-chats?conv_id=5iLGuAA6Kd9GEqoRa_conv'},
+  {type:'Script',label:'Order Confirmation'},
+  {type:'Script',label:'NDR Follow-up'},
+]);
+
+// INIT
+function init(){
+  renderAgents();
+  renderPerf();
+  renderAnn();
+  renderNotes();
+  updateClock();
+  setInterval(updateClock,1000);
+}
+
+function updateClock(){document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN');}
+
+function renderAgents(){
+  const ab=agents.filter(a=>a.lob==='Abandoned');
+  const rt=agents.filter(a=>a.lob==='Retention');
+  
+  const renderGrid=(arr,id)=>{
+    document.getElementById(id).innerHTML=arr.map(a=>`
+      <div class="acard">
+        <div class="aheader">
+          <div class="aname">
+            <div class="av">${a.name.split(' ').map(n=>n[0]).join('').substring(0,2)}</div>
+            <div class="aname-text">
+              <div class="aname-title">${a.name}</div>
+              <div class="aname-sub">${a.id}</div>
+            </div>
+          </div>
+          <div class="alob ${a.lob==='Abandoned'?'ab':'rt'}">${a.lob.substring(0,3)}</div>
+        </div>
+        <div class="ameta">📧 ${a.email.substring(0,22)}...</div>
+        <div class="crow"><input type="text" value="${a.email}" readonly id="e${a.id}"/><button class="cpbtn" onclick="cp('e${a.id}',this)">Copy</button></div>
+        <div class="crow"><input type="text" value="${a.pwd}" readonly id="p${a.id}"/><button class="cpbtn" onclick="cp('p${a.id}',this)">Pwd</button></div>
+      </div>
+    `).join('');
+  };
+  
+  renderGrid(ab,'agrid-ab');
+  renderGrid(rt,'agrid-rt');
+}
+
+function renderPerf(){
+  const data=[
+    {rank:1,name:'Sushmita Pariaar',lob:'Abandoned',calls:78,conv:14,rate:17.9},
+    {rank:2,name:'Wazid Khan',lob:'Abandoned',calls:72,conv:12,rate:16.7},
+    {rank:3,name:'Himanshu Rajput',lob:'Retention',calls:68,conv:11,rate:16.2},
+  ];
+  const tbl=document.getElementById('ptbl');
+  tbl.innerHTML=`<thead><tr><th>Rank</th><th>Agent</th><th>LOB</th><th>Calls</th><th>Conv</th><th>Rate</th></tr></thead><tbody>${data.map(p=>`<tr><td><strong>#${p.rank}</strong></td><td>${p.name}</td><td>${p.lob}</td><td>${p.calls}</td><td>${p.conv}</td><td><strong>${p.rate}%</strong></td></tr>`).join('')}</tbody>`;
+}
+
+function renderAnn(){
+  const list=document.getElementById('alist');
+  list.innerHTML=`<div style="background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.2);border-left:4px solid var(--red);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;">
+    <span style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;padding:3px 8px;background:rgba(239,68,68,.15);border-radius:16px;">🔴 Urgent</span>
+    <div style="flex:1"><div style="font-weight:700;font-size:13px;margin-bottom:3px;">Daily Target: 15 Conversions Per Agent</div><div style="font-size:12.5px;color:var(--muted);line-height:1.55;">All agents must achieve minimum 15 conversions daily. Non-achievement will be monitored and reviewed in EOD standup.</div><div style="font-size:10.5px;color:#555;margin-top:5px;">Team Lead · Today 9:00 AM</div></div></div>
+  </div>`;
+}
+
+function renderNotes(){
+  document.getElementById('nlist').innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:5px;">Order Confirmation Script</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;">Hi [Name], I'm calling from Auric regarding your recent order [Order ID]. I want to confirm your delivery details and expected delivery date. Can I verify your contact number and address?</div>
+      <div style="display:flex;gap:6px;"><button class="bsm" style="padding:5px 11px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="cpNote(this)">Copy</button></div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:5px;">NDR Follow-up Script</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;">Hi [Name], your delivery was attempted on [Date] but we couldn't complete it. I apologize for the inconvenience. Would you like to reschedule for a convenient time?</div>
+      <div style="display:flex;gap:6px;"><button class="bsm" style="padding:5px 11px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="cpNote(this)">Copy</button></div>
+    </div>
+  `;
+}
+
+function sw(id,btn){
+  document.querySelectorAll('.panel').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+function cp(id,btn){
+  navigator.clipboard.writeText(document.getElementById(id).value).then(()=>{
+    btn.textContent='✓';setTimeout(()=>btn.textContent=btn.textContent==='✓'?'Copy':'Pwd',1500);
+    toast('✓ Copied!');
+  });
+}
+
+function go(url){window.open(url,'_blank');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+function liveSearch(){
+  const q=document.getElementById('qs').value.toLowerCase();
+  const res=document.getElementById('sres');
+  if(!q){res.classList.remove('on');return;}
+  const matches=searchItems.filter(i=>i.label.toLowerCase().includes(q)).slice(0,8);
+  res.innerHTML=matches.map(m=>`<div class="result-item" onclick="${m.url?`go('${m.url}')`:''}">${m.label} <span style="color:var(--muted);font-size:11px;">${m.type}</span></div>`).join('');
+  res.classList.add('on');
+}
+
+function goSearch(){liveSearch();}
+function filterTags(){const q=document.getElementById('tagfilter').value.toLowerCase();}
+function postAnn(){const t=document.getElementById('at').value.trim(),b=document.getElementById('ab').value.trim();if(t&&b){toast('✓ Posted!');document.getElementById('at').value='';document.getElementById('ab').value='';}}
+function saveNote(){const b=document.getElementById('nb').value.trim();if(b){toast('✓ Saved!');document.getElementById('nb').value='';}}
+function cpNow(){const b=document.getElementById('nb').value.trim();if(b){navigator.clipboard.writeText(b);toast('✓ Copied!');}}
+function cpNote(btn){const body=btn.closest('div').querySelector('[style*="white-space"]').textContent;navigator.clipboard.writeText(body);btn.textContent='✓';setTimeout(()=>btn.textContent='Copy',1500);toast('✓ Copied!');}
+
+// ── AI ASSISTANT ─────────────────────────────────────────
+const AURIC_SYSTEM = `You are an expert AI sales assistant for Auric, an Indian health & wellness brand selling products like Liver Detox Effervescent Tablets. You help telesales agents (Abandoned & Retention LOBs) with:
+- Opening scripts and call openers
+- Objection handling (price, delivery, not interested, call back later, payment failure)
+- Upsell and bundle strategies
+- NDR (non-delivery report) follow-ups
+- Tagging guidance (Positive, Call Back Later, Not Interested, Payment Failed, Order Confirmed, High Priority)
+- Retention calls for payment retries
+Keep responses concise, practical, and in a friendly tone. When giving scripts, format them clearly. Always be supportive and motivating to the agent.`;
+
+let aiHistory = [];
+let aiKey = localStorage.getItem('auric_ai_key') || '';
+
+function saveKey(){
+  const k = document.getElementById('aiKey').value.trim();
+  if(k){aiKey=k;localStorage.setItem('auric_ai_key',k);toast('✓ API Key saved!');}
+  else{toast('Enter a valid key');}
+}
+
+function quickAsk(q){
+  document.getElementById('aiInput').value = q;
+  sendAI();
+}
+
+function clearChat(){
+  aiHistory=[];
+  document.getElementById('aiMsgs').innerHTML=`<div class="ai-msg bot"><div class="ai-avatar">🤖</div><div class="ai-bubble">Chat cleared! Ask me anything about your sales process.</div></div>`;
+}
+
+function aiKeydown(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAI();}
+}
+
+function appendMsg(role, html){
+  const msgs = document.getElementById('aiMsgs');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+  div.innerHTML = role==='user'
+    ? `<div class="ai-avatar">👤</div><div class="ai-bubble">${html}</div>`
+    : `<div class="ai-avatar">🤖</div><div class="ai-bubble">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function formatAIText(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\n/g,'<br>');
+}
+
+async function sendAI(){
+  const input = document.getElementById('aiInput');
+  const btn = document.getElementById('aiSendBtn');
+  const q = input.value.trim();
+  if(!q) return;
+  if(!aiKey){toast('⚠ Paste your API key first!');document.getElementById('aiKey').focus();return;}
+
+  input.value='';
+  appendMsg('user', q.replace(/</g,'&lt;'));
+  aiHistory.push({role:'user',content:q});
+
+  btn.disabled=true;
+  // typing indicator
+  const typing = appendMsg('bot','<div class="ai-typing"><span></span><span></span><span></span></div>');
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': aiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: AURIC_SYSTEM,
+        messages: aiHistory
+      })
+    });
+    const data = await res.json();
+    if(data.error){throw new Error(data.error.message);}
+    const reply = data.content.map(c=>c.text||'').join('');
+    aiHistory.push({role:'assistant',content:reply});
+    typing.querySelector('.ai-bubble').innerHTML = formatAIText(reply);
+    document.getElementById('aiMsgs').scrollTop = 99999;
+  }catch(e){
+    typing.querySelector('.ai-bubble').innerHTML = `<span style="color:var(--red)">⚠ Error: ${e.message}</span>`;
+  }
+  btn.disabled=false;
+}
+
+// pre-fill key if saved
+window.addEventListener('DOMContentLoaded',()=>{
+  if(aiKey) document.getElementById('aiKey').value=aiKey;
+});
+// ── END AI ───────────────────────────────────────────────
+
+init();
+</script>
+</body>
+</html>
